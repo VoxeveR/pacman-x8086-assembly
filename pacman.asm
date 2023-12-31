@@ -22,9 +22,16 @@
 	POINT_CHAR DB 07h 	 ; znak punktu
 	PACMAN_CHAR DB 01h   ; znak pacmana
 	
+	PLAYER_LIVES DW 3                      ; liczba zyc gracza, domyslnie rowna 3
+	LIVES_STRING DB 'LIVES', 0ah, 0dh, '$' ; napis lives do wypisania na ekranie
 	SCORE_STRING DB 'SCORE', 0ah, 0dh, '$' ; napis score do wypisania ekranie
 	PLAYER_SCORE DW 0      				   ; liczba punktów gracza, na starcie wynosi 0
 	DIGIT_DISPLAY_NOE DB 0				   ; zmienna przechowujaca na ktorej pozycji ma zostac wyswietlona dana cyfra wyniku
+	
+	MAIN_MENU_STRING DB 'MAIN MENU', 0ah, 0dh, '$'
+	PLAY_STRING DB 'PRESS P TO PLAY', 0ah, 0dh, '$'
+	HELP_STRING DB 'PRESS H FOR HELP', 0ah, 0dh, '$'
+	CURRENT_SCENE DB 0 ; 1 - GRA, 0 - MAIN MENU
 .code
 
 main proc
@@ -33,14 +40,12 @@ main proc
 	mov AX, @data
 	mov DS, AX
 	
-	 ; ustawienie trybu video na 03h - tryb tekstowy
-    mov AH, 00h
-    mov AL, 03h
-    int 10h
+	 ; ustawienie trybu video na 03h - tryb tekstowy + wyczyszczenie ekranu
+	call clear_screen
 	
-	call draw_border
-	call draw_box
-	call place_points
+	
+	cmp CURRENT_SCENE, 0
+	je MAIN_MENU
 	
 	CHECK_TIME:
 	mov AH, 2Ch 		; weź czas systemowy	
@@ -50,11 +55,30 @@ main proc
 	je CHECK_TIME 		; jeżeli jest taki sam sprawdź jeszcze raz
 	
 	mov TIME_BEFORE, DL ; aktualizacja czasu
+	
+	;nowy delay - chyba dziala
+	mov cx,0h
+	mov dx,0F000h
+	mov ah,86h
+	int 15h
+	
+	call display_lives
 	call display_score
 	call move_pacman
 	call draw_pacman
 	
+	 ; stary chyba nie dziala
+	 ; jakis delay - powoduje jakies random bledy ktorych nie umiem naprawic, ale niby dziala
+	;mov AL, 0
+	;mov CX, 1
+	;mov AH, 86H
+	;int 15H
+	
 	jmp CHECK_TIME 		; powtarzamy proces
+	
+	MAIN_MENU:
+		call draw_main_menu
+		jmp CHECK_TIME
 	
 	;mov AX, 4C00h 		; zakończenie programu
 	;int 21h
@@ -201,6 +225,7 @@ check_collision proc
 	point_detected:
 		 ; zwiększanie punktów gracza jeśli punkt
 		inc PLAYER_SCORE
+		call play_sound
 	ret
 check_collision endp
 
@@ -307,7 +332,7 @@ SIDE_BORDER:
     mov DH, BL	 ; rzad
     mov DL, 0	 ; kolumna
     int 10h		 ; przerwanie
-
+	
      ; rysowanie znaku '#'
     mov AH, 0Ah ; tryb rysowania znaku
     mov AL, BORDER_CHAR ; symbol ktory ma zostac wyswietlony
@@ -434,7 +459,7 @@ display_score proc
     int 10h
 	
 	 ; wypisanie napisu 'SCORE'
-	mov dx, offset score_string
+	mov dx, offset SCORE_STRING
 	mov ah, 9
 	int 21h
 	
@@ -451,6 +476,34 @@ display_score proc
 	
     ret
 display_score endp
+
+display_lives proc
+     ; ustawienie pozycji kursora, tam gdzie ma być wyświetlany napis
+    mov AH, 02h
+    mov BH, 0
+    mov DH, 0    ; rząd
+    mov DL, 50   ; kolumna
+    int 10h
+	
+	 ; wypisanie napisu 'LIVES'
+	mov dx, offset LIVES_STRING
+	mov ah, 9
+	int 21h
+	
+	 ; ustawienie pozycji kursora, tam gdzie ma być wyświetlany wynik (cyfra)
+	mov AH, 02h
+	mov BH, 0
+	mov DH, 0
+	mov DL, 56
+	int 10h
+	
+	 ; funkcja wyświetlająca wynik gracza
+	mov AX, PLAYER_LIVES
+	call display_integer
+	
+    ret
+display_lives endp
+
 
 ; funkcja wyświetlająca znak na ekranie
 display_integer proc
@@ -500,5 +553,121 @@ display_integer proc
 
     ret
 display_integer endp
+
+
+draw_main_menu proc
+	call clear_screen
+	
+	mov AH, 02h
+	mov BH, 00h
+	mov DH, 4
+	mov DL, 4
+	int 10h
+	
+	mov ah, 09h
+	lea DX, MAIN_MENU_STRING
+	int 21h
+
+	mov AH, 02h
+	mov BH, 00H
+	mov DH, 5
+	mov DL, 5
+	int 10h
+	
+	mov ah, 09h
+	lea DX, PLAY_STRING
+	int 21h
+	
+	mov AH, 02h
+	mov BH, 00H
+	mov DH, 6
+	mov DL, 5
+	int 10h
+	
+	mov ah, 09h
+	lea DX, HELP_STRING
+	int 21h
+	
+	call play_sound
+	WRONG_BUTTON:
+	
+	mov AH, 00h
+	int 16h
+	
+	cmp AL, 'P'
+	je PLAY
+	cmp AL, 'p'
+	je PLAY
+	
+	jmp WRONG_BUTTON
+	
+	PLAY:
+		mov CURRENT_SCENE, 01h
+			call clear_screen
+			call draw_border
+			call draw_box
+			call place_points
+	
+	ret
+draw_main_menu endp
+;generate_ghosts proc ; kit wie jak to zrobicXD
+
+play_music_main_menu proc
+
+
+	ret
+play_music_main_menu endp
+
+play_sound proc
+	;smth music related	
+	in al,61h
+	or al,3
+	out 61h,al
+	;stmh music related up
+	
+	mov bx, 0200h	; Standardowy dźwięk A, 440 Hz
+	mov dx, 0012h	; górna część liczby 1234dd
+	mov ax, 34DDh	; dolna część liczby 1234dd
+	div bx		; ax = wartość do wysłania
+
+	pushf		; zachowaj flagi
+	push ax		; zachowaj wartość do wysłania
+	cli		; wyłącz przerwania
+	mov al,0b6h
+	out 43h,al	; wyślij komendę
+
+	pop ax
+	out 42h,al	; wyślij pierwszą połowę licznika
+	mov al,ah
+	out 42h,al	; wyślij drugą połowę licznika
+	popf		; przywróć stan flagi przerwań
+	
+	mov cx,0h
+	mov dx,0F000h
+	mov ah,86h
+	int 15h
+
+	
+	in al,61h
+	and al,not 3		; zerujemy bity 0 i 1
+	out 61h,al
+	ret
+ret
+play_sound endp
+
+
+clear_screen proc
+	mov AH, 00h
+	mov AL, 03h 
+	int 10h ; przerwanie
+	
+	; zmiana koloru tła
+	mov AH, 0Bh 
+	mov BH, 00h
+	mov BL, 00h ; czarne tło
+	int 10h ; przerwanie
+	
+	ret
+clear_screen endp
 
 end main
