@@ -1,6 +1,10 @@
+.286
 .model large
 .stack 100h
 .data
+	BACKWARDS_CHECK DB 0b
+	BACKWARDS_CHECK_BACKUP DB 0b
+
 	WINDOW_WIDTH DW 80d ; 80 znaków / 80 kolumn
 	WINDOW_HEIGHT DW 25d ; 25 znaków / 25 rzędów
 
@@ -9,11 +13,42 @@
 	GAME_WINDOW_START_Y DB 2 ; początek okna właściwego gry (z pominięciem ramek) - nr rzędu
 	GAME_WINDOW_END_Y DB 22 ; koniec okna właściwego gry (z pominięciem ramek) - nr rzędu
 
-	PACMAN_X DW 10 		; pacman - pozycja X
-	PACMAN_PREV_X DW 10 ; zmienna do zapamietywania poprzedniej pozycji X - uzywana do czyszczenia
-	PACMAN_Y DW 10 		; pacman - pozycja Y
-	PACMAN_PREV_Y DW 10 ; zmienna do zapamietywania poprzedniej pozycji Y - uzywana do czyszczenia
-	PACMAN_SPEED DW 1   ; predkosc pacmana
+	PACMAN_X DB 10 		; pacman - pozycja X
+	PACMAN_PREV_X DB 10 ; zmienna do zapamietywania poprzedniej pozycji X - uzywana do czyszczenia
+	PACMAN_Y DB 10 		; pacman - pozycja Y
+	PACMAN_PREV_Y DB 10 ; zmienna do zapamietywania poprzedniej pozycji Y - uzywana do czyszczenia
+	PACMAN_SPEED DB 1   ; predkosc pacmana, najlepiej nie zmieniac gdyz jest to tryb tekstowy
+	PACMAN_COLOR DW 0Eh
+
+	GHOST_OVERRIDE_COLOR DW 07h;
+	GHOST_OVERRIDE_CHAR DB 07h ; char ktorego nadpisal duszek
+	 ; czerwony duszek
+	BLINKY_X DB 44
+	BLINKY_PREV_X DB 44
+	BLINKY_Y DB 9
+	BLINKY_PREV_Y DB 9
+	BLINKY_COLOR DW 0Ch
+
+     ; rozowy duszek
+	PINKY_X DW ?
+	PINKY_PREV_X DW ?
+	PINKY_Y DW ?
+	PINKY_PREV_Y DW ?
+	PINKY_COLOR DW ?
+
+     ; niebieski duszek
+	INKY_X DW ?
+	INKY_PREV_X DW ?
+	INKY_Y DW ?
+	INKY_PREV_Y DW ?
+	INKY_COLOR DW ?
+
+	 ; pomaranczowy duszek
+	CLYDE_X DW ?
+	CLYDE_PREV_X DW ?
+	CLYDE_Y DW ?
+	CLYDE_PREV_Y DW ?
+	CLYDE_COLOR DW ?
 
 	TIME_BEFORE DB 0 	  ; zmienna używana do sprawdzenia czy czas się zmienił (zegar)
 	LAST_KEYSTROKE DB 61h ; zmienna zapisujaca ostatnio wcisniety klawisz (pacman porusza sie caly czas w tą stronę)
@@ -21,8 +56,9 @@
 	BORDER_CHAR DB 0B1h  ; znak tla
 	POINT_CHAR DB 07h 	 ; znak punktu
 	PACMAN_CHAR DB 01h   ; znak pacmana
+	GHOST_CHAR DB 21h ; znak duszka
 
-	PLAYER_LIVES DW 3                      ; liczba zyc gracza, domyslnie rowna 3
+	PLAYER_LIVES DW 1                      ; liczba zyc gracza, domyslnie rowna 3
 	LIVES_STRING DB 'LIVES', 0ah, 0dh, '$' ; napis lives do wypisania na ekranie
 	SCORE_STRING DB 'SCORE', 0ah, 0dh, '$' ; napis score do wypisania ekranie
 	PLAYER_SCORE DW 0      				   ; liczba punktów gracza, na starcie wynosi 0
@@ -38,11 +74,49 @@
 	HELPPAGE_STRING_4 DB 'PRESS D TO MOVE RIGHT', 0ah, 0dh, '$'
 	HELPPAGE_STRING_5 DB 'PRESS R TO RESTART', 0ah, 0dh, '$'
 	HELPPAGE_STRING_6 DB '<- PRESS Q TO BACK', 0ah, 0dh, '$'
+	LIVE_LOST_STRING db 'U HAVE LOST A LIVE! BE CAREFUL!', 0ah, 0dh, '$'
 	CURRENT_SCENE DB 0 ; 2 - HELP 1 - GRA, 0 - MAIN MENU
 
 	MAP_WALLS_X DW 11, 12, 13, 14, 15, 16, 11, 12, 13, 14, 15, 16, 11, 12, 13, 14, 15, 16, 11, 12, 13, 14, 15, 16, 11, 12, 13, 14, 15, 16, 11, 12, 13, 14, 15, 16, 18, 19, 20, 18, 18, 18, 19, 20, 20, 20, 11, 12, 13, 14, 15, 16, 11, 12, 13, 14, 15, 16, 11, 12, 13, 14, 15, 16, 19, 20, 18, 18, 19, 20, 18, 19, 20, 18, 19, 20, 22, 22, 22, 22, 22, 22, 22, 22, 22, 24, 25, 26, 27, 28, 29, 24, 25, 26, 27, 28, 29, 24, 25, 26, 27, 28, 29, 24, 25, 26, 27, 28, 29, 24, 25, 26, 27, 28, 29, 24, 25, 26, 27, 28, 29, 31, 32, 33, 31, 33, 31, 33, 31, 33, 34, 35, 36, 37, 38, 39, 40, 30, 32, 32, 32, 39, 40, 39, 40, 39, 40, 37, 38, 35, 36, 37, 35, 35, 34, 35, 36, 37, 38, 34, 34, 36, 37, 38, 39, 40, 36, 36, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 31, 32, 31, 32, 30, 30, 30, 31, 32, 29, 28, 27, 26, 25, 24, 23, 23, 0
 	MAP_WALLS_Y DW  3,  3,  3,  3,  3,  3,  4,  4,  4,  4,  4,  4,  5,  5,  5,  5,  5,  5,  6,  6,  6,  6,  6,  6,  7,  7,  7,  7,  7,  7,  8,  8,  8,  8,  8,  8,  3,  3,  3,  4,  5,  7,  7,  7,  6,  5, 10, 10, 10, 10, 10, 10, 11, 11, 11, 11, 11, 11, 12, 12, 12 ,12 ,12 ,12,  9,  9,  9, 10, 10, 10, 11, 11, 11, 12, 12, 12,  2,  3,  5,  6,  7,  8,  9, 10, 12,  2,  2,  2,  2,  2,  2,  3,  3,  3,  3,  3,  3,  5,  5,  5,  5,  5,  5,  6,  6,  6,  6,  6,  6,  8,  8,  8,  8,  8,  8,  9,  9,  9,  9,  9,  9,  2,  2,  2,  4,  4,  5,  5,  6,  6,  2,  2,  2,  2,  2,  2,  2,  2,  4,  5,  6,  3,  3,  5,  5,  6,  6,  6,  6,  4,  4,  4,  5,  6,  8,  8,  8,  8,  8,  9, 10, 10, 10, 10, 10, 10, 11, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 10, 10,  9,  9, 10,  9,  8,  8,  8, 10, 10, 10, 10, 10, 10,  2,  3, 0
 .code
+
+displayStringAtPosition MACRO row, col, string_ptr
+		mov AH, 02h
+		mov BH, 00h
+		mov DH, row
+		mov DL, col
+		int 10h
+
+		mov ah, 09h
+		lea DX, string_ptr
+		int 21h
+ENDM
+
+setCursor MACRO x, y
+	pusha
+
+	mov AH, 02h				 ; przerwanie ustawiające pozycję kursora
+    mov BH, 0  				 ; numer strony
+    mov DH, y    ; rząd
+    mov DL, x	 ; kolumna
+    int 10h
+
+	popa
+ENDM
+
+drawSymbol MACRO symbol, color, repeatCount
+	pusha
+
+    mov AH, 09h				 ; przerwanie wyświetlające znak na pozycji kursora
+    mov AL, symbol 			 ; zastępowanie poprzedniego znaku wybranym symbolem
+	mov BX, color			 ; kolor pacmana
+	mov BH, 0                ; numer strony
+    mov CX, repeatCount 	 ; liczba powtórzeń
+    int 10h
+
+	popa
+ENDM
 
 clear_screen proc
 	mov AH, 00h
@@ -95,181 +169,18 @@ play_sound proc
 ret
 play_sound endp
 
-check_collision proc
-	 ; ustawienie pozycji kursora na NOWĄ pozycję pacmana (juz przesunieta)
-	mov AH, 02h
-	mov BH, 0
-	mov DH, byte ptr [PACMAN_Y] ;rzad
-	mov DL, byte ptr [PACMAN_X] ; kolumna
-	int 10h
-
-	 ; odczytanie znaku z pozycji na której wylądować ma pacman
-	mov AH, 08h
-	mov BH, 0
-	int 10h
-
-	cmp AL, POINT_CHAR
-	je point_detected
-
-	 ; sprawdzenie czy znak jest równy '#'
-	cmp AL, BORDER_CHAR
-	je collision_detected
-
-	 ; jeżeli nie, to czyścimy rejestr AL
-	xor AL, AL
-	ret
-
-    collision_detected:
-         ; jeżeli tak, ustawiamy rejestr AL na 1
-        mov AL, 1
-    ret
-
-	point_detected:
-		 ; zwiększanie punktów gracza jeśli punkt
-		inc PLAYER_SCORE
-		call play_sound
-	ret
-check_collision endp
-
-move_pacman proc
-     ; sprawdz czy wcisniety jest przycisk - jesli nie, nic nie rob
-    mov AH, 01h
-    int 16h
-    jnz NO_MOVE
-    mov AL, LAST_KEYSTROKE
-
-     ; sprawdz ktory przycisk jest wcisniety, w rejestrze AL jest zapisana wartosc ASCII tego przycisku
-    jmp MOVE
-    NO_MOVE:
-    mov AH, 00h
-    int 16h
-    MOVE:
-
-     ; zapisywanie poprzedniej pozycji pacmana, w celu wyczyszczenia
-    mov BX, PACMAN_X
-    mov CX, PACMAN_Y
-    mov PACMAN_PREV_X, BX
-    mov PACMAN_PREV_Y, CX
-
-     ; jezeli wcisniety przycisk jest rowny 'w' lub 'W' to rusz się do góry
-    cmp AL, 77h ; 'w'
-    je MOVE_PACMAN_UP
-    cmp AL, 57h ; 'W'
-    je MOVE_PACMAN_UP
-
-     ; jezeli wcisniety przycisk jest rowny 'a' lub 'A' to rusz się w lewo
-    cmp AL, 61h ; 'a'
-    je MOVE_PACMAN_LEFT
-    cmp AL, 41h ; 'A'
-    je MOVE_PACMAN_LEFT
-
-     ; jezeli wcisniety przycisk jest rowny 's' lub 'S' to rusz się w dół
-    cmp AL, 73h ; 's'
-    je MOVE_PACMAN_DOWN
-    cmp AL, 53h ; 'S'
-    je MOVE_PACMAN_DOWN
-
-     ; jezeli wcisniety przycisk jest rowny 'd' lub 'D' to rusz się w prawo
-    cmp AL, 64h ; 'd'
-    je MOVE_PACMAN_RIGHT
-    cmp AL, 44h ; 'D'
-    je MOVE_PACMAN_RIGHT
-
-    ret
-     ;---------------------------------
-    MOVE_PACMAN_UP:
-        mov LAST_KEYSTROKE, AL
-        mov AX, PACMAN_SPEED
-		sub PACMAN_Y, AX
-
-        call check_collision
-		cmp AL, 1 ; sprawdzamy czy nastąpiła kolizja
-        jz fix_pacman_y_up
-    ret
-
-    fix_pacman_y_up:
-		mov AX, PACMAN_PREV_Y
-        mov PACMAN_Y, AX
-    ret
-     ;---------------------------------
-    MOVE_PACMAN_LEFT:
-        mov LAST_KEYSTROKE, AL
-        mov AX, PACMAN_SPEED
-		sub PACMAN_X, AX
-
-		call check_collision
-		cmp AL, 1 ; sprawdzamy czy nastąpiła kolizja
-        jz fix_pacman_x_left
-    ret
-
-    fix_pacman_x_left:
-		mov AX, PACMAN_PREV_X
-        mov PACMAN_X, AX
-    ret
-     ;---------------------------------
-    MOVE_PACMAN_DOWN:
-        mov LAST_KEYSTROKE, AL
-        mov AX, PACMAN_SPEED
-        add PACMAN_Y, AX
-
-		call check_collision
-		cmp AL, 1 ; sprawdzamy czy nastąpiła kolizja
-        jz fix_pacman_y_down
-    ret
-
-    fix_pacman_y_down:
-		mov AX, PACMAN_PREV_Y
-        mov PACMAN_Y, AX
-    ret
-     ;---------------------------------
-    MOVE_PACMAN_RIGHT:
-        mov LAST_KEYSTROKE, AL
-        mov AX, PACMAN_SPEED
-        add PACMAN_X, AX
-
-		call check_collision
-		cmp AL, 1 ; sprawdzamy czy nastąpiła kolizja
-        jz fix_pacman_x_right
-    ret
-
-    fix_pacman_x_right:
-		mov AX, PACMAN_PREV_X
-        mov PACMAN_X, AX
-    ret
-     ;---------------------------------
-
-move_pacman endp
-
 draw_pacman proc
 	 ; usun starego pacmana
-     ; stawienie pozycji kursora
-    mov AH, 02h
-    mov BH, 0  				 ; numer strony
-    mov DH, byte ptr [PACMAN_PREV_Y]
-    mov DL, byte ptr [PACMAN_PREV_X]
-    int 10h
-
-     ; rysowanie pacmana
-    mov AH, 0Ah
-    mov AL, ' ' 			 ; zastępowanie poprzedniego znaku pustym
-    mov BH, 0  				 ; numer strony
-    mov CX, 1  				 ; liczba powtórzeń
-    int 10h
+     ; ustawienie pozycji kursora
+	setCursor PACMAN_PREV_X, PACMAN_PREV_Y
+     ; zastepowanie starego pacmana pustym znakiem
+	drawSymbol ' ', 0, 1
 
 	 ; rysuj nowego pacmana
      ; ustawienie pozycji kursora
-    mov AH, 02h
-    mov BH, 0   			 ; numer strony
-    mov DH, byte ptr [PACMAN_Y]
-    mov DL, byte ptr [PACMAN_X]
-    int 10h
-
+	setCursor PACMAN_X, PACMAN_Y
      ; rysowanie pacmana
-    mov AH, 0Ah
-    mov AL, PACMAN_CHAR	 ; wyświetlenie pacmana jako symbol
-    mov BH, 0  				 ; numer strony
-    mov CX, 1  				 ; liczba powtórzeń
-    int 10h
+	drawSymbol PACMAN_CHAR, PACMAN_COLOR, 1
 
     ret
 draw_pacman endp
@@ -277,58 +188,19 @@ draw_pacman endp
 draw_border proc
 
 	 ; rysowanie gornej krawedzi
-    mov AH, 02h  ; tryb ustawiania kursora
-    mov BH, 0    ; numer strony
-    mov DH, 0	 ; rzad
-    mov DL, 0	 ; kolumna
-    int 10h		 ; przerwanie
-
+	setCursor 0, 0
 	 ; rysowanie znaku '#'
-    mov AH, 0Ah ; tryb rysowania znaku
-    mov AL, BORDER_CHAR ; symbol ktory ma zostac wyswietlony
-    mov BH, 0   ; numer strony
-    mov CX, 80	; liczba powtorzen
-    int 10h		; przerwanie
+	drawSymbol BORDER_CHAR, 7, 80
 
-    mov AH, 02h  ; tryb ustawiania kursora
-    mov BH, 0    ; numer strony
-    mov DH, 1	 ; rzad
-    mov DL, 0	 ; kolumna
-    int 10h		 ; przerwanie
-
-	 ; rysowanie znaku 'BORDER_CHAR'
-    mov AH, 0Ah ; tryb rysowania znaku
-    mov AL, BORDER_CHAR ; symbol ktory ma zostac wyswietlony
-    mov BH, 0   ; numer strony
-    mov CX, 80	; liczba powtorzen
-    int 10h		; przerwanie
+	setCursor 0, 1
+	drawSymbol BORDER_CHAR, 7, 80
 
 	 ; rysowanie dolnej krawędzi
-    mov AH, 02h  ; tryb ustawiania kursora
-    mov BH, 0    ; numer strony
-    mov DH, 24	 ; rzad
-    mov DL, 0	 ; kolumna
-    int 10h		 ; przerwanie
+	setCursor 0, 24
+	drawSymbol BORDER_CHAR, 7, 80
 
-	 ; rysowanie znaku 'BORDER_CHAR'
-    mov AH, 0Ah ; tryb rysowania znaku
-    mov AL, BORDER_CHAR ; symbol ktory ma zostac wyswietlony
-    mov BH, 0   ; numer strony
-    mov CX, 80	; liczba powtorzen
-    int 10h		; przerwanie
-
-    mov AH, 02h  ; tryb ustawiania kursora
-    mov BH, 0    ; numer strony
-    mov DH, 23	 ; rzad
-    mov DL, 0	 ; kolumna
-    int 10h		 ; przerwanie
-
-	 ; rysowanie znaku 'BORDER_CHAR'
-    mov AH, 0Ah ; tryb rysowania znaku
-    mov AL, BORDER_CHAR ; symbol ktory ma zostac wyswietlony
-    mov BH, 0   ; numer strony
-    mov CX, 80	; liczba powtorzen
-    int 10h		; przerwanie
+	setCursor 0, 23
+	drawSymbol BORDER_CHAR, 7, 80
 
 	mov BL, 1 ; w celu pominiecia dwoch pierwszych linii
 SIDE_BORDER:
@@ -336,32 +208,12 @@ SIDE_BORDER:
     inc BL
 
      ; rysowanie lewej krawedzi
-    mov AH, 02h  ; tryb ustawiania kursora
-    mov BH, 0    ; numer strony
-    mov DH, BL	 ; rzad
-    mov DL, 0	 ; kolumna
-    int 10h		 ; przerwanie
+	setCursor 0, BL
+	drawSymbol BORDER_CHAR, 7, 10
 
-     ; rysowanie znaku 'BORDER_CHAR'
-    mov AH, 0Ah ; tryb rysowania znaku
-    mov AL, BORDER_CHAR ; symbol ktory ma zostac wyswietlony
-    mov BH, 0   ; numer strony
-    mov CX, 10	; liczba powtorzen
-    int 10h		; przerwanie
-
-	 ; right border
-    mov AH, 02h  ; tryb ustawiania kursora
-    mov BH, 0    ; numer strony
-    mov DH, BL	 ; rzad
-    mov DL, 70	 ; kolumna
-    int 10h		 ; przerwanie
-
-     ; rysowanie znaku '#'
-    mov AH, 0Ah ; tryb rysowania znaku
-    mov AL, BORDER_CHAR ; symbol ktory ma zostac wyswietlony
-    mov BH, 0   ; numer strony
-    mov CX, 10	; liczba powtorzen
-    int 10h		; przerwanie
+	 ; rysowanie prawej krawedzi
+	setCursor 70, BL
+	drawSymbol BORDER_CHAR, 7, 10
 
     ; sprawdzamy warunek koncowy - czy BL jest rowne 22
     cmp BL, 22		 ; 22 bo pomijamy dwa ostatnie rzędy
@@ -369,49 +221,6 @@ SIDE_BORDER:
 
     ret
 draw_border endp
-
-; to do potencjalnej zmiany
-draw_box proc
-	mov dh, 1
-	xor bl, bl
-
-	DRAW_BOX_JMP:
-
-	inc BL
-	inc DH
-
-     ; ustawienie pozycji kursora, rysujemy box'a po lewej
-    mov AH, 02h
-    mov BH, 0
-    inc DH       ; przenosimy sie do nastepnego rzędu
-	mov dl, 8 	 ; ustawienie początku box'a na 8
-    int 10h
-
-     ; rysowanie box'a po osi x
-    mov AH, 0Ah
-    mov AL, BORDER_CHAR         ; tu wypisujemy znak
-    mov BH, 0          			;  numer strony
-    mov CX, 30         			; długość box'a
-    int 10h
-
-	 ; ustawienie pozycji kursora, rysujemy box'a po prawej
-    mov AH, 02h
-    mov BH, 0
-	mov dl, 42
-    int 10h
-
-     ; rysowanie box'a po osi x
-    mov AH, 0Ah
-    mov AL, BORDER_CHAR
-    mov BH, 0
-    mov CX, 30
-    int 10h
-
-	cmp BL, 10 ; sprawdzamy czy wydrukowaliśmy 10 rzędów box'ów
-	jne DRAW_BOX_JMP
-
-    ret
-draw_box endp
 
 draw_box_array proc
 
@@ -531,11 +340,7 @@ place_points proc ; DH - RZAD ; DL - KOLUMNA
 		je SKIP_PLACE_POINT
 
 		 ; wypisanie znaku punktu
-		mov AH, 0Ah
-		mov AL, POINT_CHAR
-		mov BH, 0
-		mov CX, 1
-		int 10h
+		drawSymbol POINT_CHAR, 0Fh, 1
 
 	SKIP_PLACE_POINT:
 
@@ -548,6 +353,270 @@ place_points proc ; DH - RZAD ; DL - KOLUMNA
 
 	ret
 place_points endp
+
+help_handler proc
+		mov CURRENT_SCENE, 02h
+		displayStringAtPosition 4, 4, HELPPAGE_STRING_1
+		displayStringAtPosition 5, 4, HELPPAGE_STRING_2
+		displayStringAtPosition 6, 4, HELPPAGE_STRING_3
+		displayStringAtPosition 7, 4, HELPPAGE_STRING_4
+		displayStringAtPosition 8, 4, HELPPAGE_STRING_5
+		displayStringAtPosition 9, 4, HELPPAGE_STRING_6
+
+		WRONG_BUTTON_HELP:
+		mov AH, 00h
+		int 16h
+
+		cmp AL, 'q'
+		je MENU_START
+		cmp AL, 'Q'
+		je MENU_START
+
+		jmp WRONG_BUTTON_HELP
+	ret
+help_handler endp
+
+load_defaults proc
+	mov PACMAN_X, 10
+	mov PACMAN_PREV_X, 10
+	mov PACMAN_Y, 10
+	mov PACMAN_PREV_Y, 10
+
+	mov BLINKY_X, 44
+	mov BLINKY_PREV_X, 44
+	mov BLINKY_Y, 9
+	mov BLINKY_PREV_Y, 9
+
+	mov BACKWARDS_CHECK, 0b
+	mov BACKWARDS_CHECK_BACKUP, 0b
+ret
+load_defaults endp
+
+draw_main_menu proc
+	call load_defaults
+	MENU_START:
+	call clear_screen
+	mov CURRENT_SCENE, 0h
+
+	displayStringAtPosition 4, 4, MAIN_MENU_STRING
+	displayStringAtPosition 5, 4, PLAY_STRING
+	displayStringAtPosition 6, 4, HELP_STRING
+	displayStringAtPosition 7, 4, QUIT_STRING
+
+	call play_sound
+	WRONG_BUTTON:
+
+	mov AH, 00h
+	int 16h
+
+	cmp AL, 'P'
+	je PLAY
+	cmp AL, 'p'
+	je PLAY
+	cmp AL, 'H'
+	je HELP
+	cmp AL, 'h'
+	je HELP
+	cmp AL, 'Q'
+	je QUIT
+	cmp AL, 'q'
+	je QUIT
+
+	jmp WRONG_BUTTON
+
+	PLAY:
+		mov CURRENT_SCENE, 01h
+			call clear_screen
+			call draw_border
+			call draw_box_array
+			call place_points
+
+			mov PLAYER_SCORE, 0
+			mov PLAYER_LIVES, 3
+			jmp DRAW_MAIN_END
+	HELP:
+		call help_handler
+	QUIT:
+		call clear_screen
+		MOV AX, 4C00h
+		int 21h
+
+	DRAW_MAIN_END:
+	ret
+draw_main_menu endp
+
+ghost_collision proc
+cmp PLAYER_LIVES, 0
+je end_game
+
+	setCursor PACMAN_X, PACMAN_Y
+	drawSymbol ' ', 0, 1
+
+	setCursor PACMAN_PREV_X, PACMAN_PREV_Y
+	drawSymbol ' ', 0, 1
+
+	;setCursor BLINKY_X, BLINKY_Y
+	;drawSymbol ' ', 0, 1
+
+	;setCursor BLINKY_PREV_X, BLINKY_PREV_Y
+	;drawSymbol ' ', 0, 1
+
+	call load_defaults
+
+	ret
+end_game:
+	call draw_main_menu
+ret
+ghost_collision endp
+
+check_collision proc
+	 ; ustawienie pozycji kursora na NOWĄ pozycję pacmana (juz przesunieta)
+	setCursor PACMAN_X, PACMAN_Y
+
+	 ; odczytanie znaku z pozycji na której wylądować ma pacman
+	mov AH, 08h
+	mov BH, 0
+	int 10h
+
+	cmp AL, GHOST_CHAR
+	je ghost_detected
+
+	cmp AL, POINT_CHAR
+	je point_detected
+
+	 ; sprawdzenie czy znak jest równy '#'
+	cmp AL, BORDER_CHAR
+	je collision_detected
+
+	 ; jeżeli nie, to czyścimy rejestr AL
+	xor AL, AL
+	ret
+
+	ghost_detected:
+		dec PLAYER_LIVES
+		call ghost_collision
+	ret
+
+    collision_detected:
+         ; jeżeli tak, ustawiamy rejestr AL na 1
+        mov AL, 1
+    ret
+
+	point_detected:
+		 ; zwiększanie punktów gracza jeśli punkt
+		inc PLAYER_SCORE
+		call play_sound
+	ret
+check_collision endp
+
+move_pacman proc
+     ; sprawdz czy wcisniety jest przycisk - jesli nie, nic nie rob
+    mov AH, 01h
+    int 16h
+    jnz NO_MOVE
+    mov AL, LAST_KEYSTROKE
+
+     ; sprawdz ktory przycisk jest wcisniety, w rejestrze AL jest zapisana wartosc ASCII tego przycisku
+    jmp MOVE
+    NO_MOVE:
+    mov AH, 00h
+    int 16h
+    MOVE:
+
+     ; zapisywanie poprzedniej pozycji pacmana, w celu wyczyszczenia
+    mov BL, PACMAN_X
+    mov CL, PACMAN_Y
+    mov PACMAN_PREV_X, BL
+    mov PACMAN_PREV_Y, CL
+
+     ; jezeli wcisniety przycisk jest rowny 'w' lub 'W' to rusz się do góry
+    cmp AL, 77h ; 'w'
+    je MOVE_PACMAN_UP
+    cmp AL, 57h ; 'W'
+    je MOVE_PACMAN_UP
+
+     ; jezeli wcisniety przycisk jest rowny 'a' lub 'A' to rusz się w lewo
+    cmp AL, 61h ; 'a'
+    je MOVE_PACMAN_LEFT
+    cmp AL, 41h ; 'A'
+    je MOVE_PACMAN_LEFT
+
+     ; jezeli wcisniety przycisk jest rowny 's' lub 'S' to rusz się w dół
+    cmp AL, 73h ; 's'
+    je MOVE_PACMAN_DOWN
+    cmp AL, 53h ; 'S'
+    je MOVE_PACMAN_DOWN
+
+     ; jezeli wcisniety przycisk jest rowny 'd' lub 'D' to rusz się w prawo
+    cmp AL, 64h ; 'd'
+    je MOVE_PACMAN_RIGHT
+    cmp AL, 44h ; 'D'
+    je MOVE_PACMAN_RIGHT
+
+    ret
+     ;---------------------------------
+    MOVE_PACMAN_UP:
+        mov LAST_KEYSTROKE, AL
+        mov AL, PACMAN_SPEED
+		sub PACMAN_Y, AL
+
+        call check_collision
+		cmp AL, 1 ; sprawdzamy czy nastąpiła kolizja
+        jz fix_pacman_y_up
+    ret
+
+    fix_pacman_y_up:
+		mov AL, PACMAN_PREV_Y
+        mov PACMAN_Y, AL
+    ret
+     ;---------------------------------
+    MOVE_PACMAN_LEFT:
+        mov LAST_KEYSTROKE, AL
+        mov AL, PACMAN_SPEED
+		sub PACMAN_X, AL
+
+		call check_collision
+		cmp AL, 1 ; sprawdzamy czy nastąpiła kolizja
+        jz fix_pacman_x_left
+    ret
+
+    fix_pacman_x_left:
+		mov AL, PACMAN_PREV_X
+        mov PACMAN_X, AL
+    ret
+     ;---------------------------------
+    MOVE_PACMAN_DOWN:
+        mov LAST_KEYSTROKE, AL
+        mov AL, PACMAN_SPEED
+        add PACMAN_Y, AL
+
+		call check_collision
+		cmp AL, 1 ; sprawdzamy czy nastąpiła kolizja
+        jz fix_pacman_y_down
+    ret
+
+    fix_pacman_y_down:
+		mov AL, PACMAN_PREV_Y
+        mov PACMAN_Y, AL
+    ret
+     ;---------------------------------
+    MOVE_PACMAN_RIGHT:
+        mov LAST_KEYSTROKE, AL
+        mov AL, PACMAN_SPEED
+        add PACMAN_X, AL
+
+		call check_collision
+		cmp AL, 1 ; sprawdzamy czy nastąpiła kolizja
+        jz fix_pacman_x_right
+    ret
+
+    fix_pacman_x_right:
+		mov AL, PACMAN_PREV_X
+        mov PACMAN_X, AL
+    ret
+     ;---------------------------------
+
+move_pacman endp
 
 ; funkcja wyświetlająca znak na ekranie
 display_integer proc
@@ -600,11 +669,7 @@ display_integer endp
 
 display_score proc
      ; ustawienie pozycji kursora, tam gdzie ma być wyświetlany napis
-    mov AH, 02h
-    mov BH, 0
-    mov DH, 0    ; rząd
-    mov DL, 60   ; kolumna
-    int 10h
+	setCursor 60, 0
 
 	 ; wypisanie napisu 'SCORE'
 	mov dx, offset SCORE_STRING
@@ -612,11 +677,7 @@ display_score proc
 	int 21h
 
 	 ; ustawienie pozycji kursora, tam gdzie ma być wyświetlany wynik (cyfra)
-	mov AH, 02h
-	mov BH, 0
-	mov DH, 0
-	mov DL, 66
-	int 10h
+	setCursor 66,0
 
 	 ; funkcja wyświetlająca wynik gracza
 	mov AX, PLAYER_SCORE
@@ -627,11 +688,7 @@ display_score endp
 
 display_lives proc
      ; ustawienie pozycji kursora, tam gdzie ma być wyświetlany napis
-    mov AH, 02h
-    mov BH, 0
-    mov DH, 0    ; rząd
-    mov DL, 50   ; kolumna
-    int 10h
+	setCursor 50, 0
 
 	 ; wypisanie napisu 'LIVES'
 	mov dx, offset LIVES_STRING
@@ -639,11 +696,7 @@ display_lives proc
 	int 21h
 
 	 ; ustawienie pozycji kursora, tam gdzie ma być wyświetlany wynik (cyfra)
-	mov AH, 02h
-	mov BH, 0
-	mov DH, 0
-	mov DL, 56
-	int 10h
+	setCursor 56, 0
 
 	 ; funkcja wyświetlająca wynik gracza
 	mov AX, PLAYER_LIVES
@@ -652,90 +705,195 @@ display_lives proc
     ret
 display_lives endp
 
-displayStringAtPosition MACRO row, col, string_ptr
-		mov AH, 02h
-		mov BH, 00h
-		mov DH, row
-		mov DL, col
-		int 10h
+check_collision_enemy proc
+	 ; ustawienie pozycji kursora na NOWĄ pozycję pacmana (juz przesunieta)
+	setCursor BLINKY_X, BLINKY_Y
 
-		mov ah, 09h
-		lea DX, string_ptr
-		int 21h
-ENDM
+	 ; odczytanie znaku z pozycji na której wylądować ma pacman
+	mov AH, 08h
+	mov BH, 0
+	int 10h
 
-help_handler proc
-		mov CURRENT_SCENE, 02h
-		displayStringAtPosition 4, 4, HELPPAGE_STRING_1
-		displayStringAtPosition 5, 4, HELPPAGE_STRING_2
-		displayStringAtPosition 6, 4, HELPPAGE_STRING_3
-		displayStringAtPosition 7, 4, HELPPAGE_STRING_4
-		displayStringAtPosition 8, 4, HELPPAGE_STRING_5
-		displayStringAtPosition 9, 4, HELPPAGE_STRING_6
+	cmp AL, PACMAN_CHAR
+	je collision_detected_pacman
 
-		WRONG_BUTTON_HELP:
-		mov AH, 00h
-		int 16h
+	 ; sprawdzenie czy znak jest równy '#'
+	cmp AL, BORDER_CHAR
+	je collision_detected_enemy
 
-		cmp AL, 'q'
-		je MENU_START
-		cmp AL, 'Q'
-		je MENU_START
-
-		jmp WRONG_BUTTON_HELP
+	 ; jeżeli nie, to czyścimy rejestr AL
+	xor BL, BL
 	ret
-help_handler endp
 
-draw_main_menu proc
-
-	MENU_START:
-	call clear_screen
-	mov CURRENT_SCENE, 0h
-
-	displayStringAtPosition 4, 4, MAIN_MENU_STRING
-	displayStringAtPosition 5, 4, PLAY_STRING
-	displayStringAtPosition 6, 4, HELP_STRING
-	displayStringAtPosition 7, 4, QUIT_STRING
-
-	call play_sound
-	WRONG_BUTTON:
-
-	mov AH, 00h
-	int 16h
-
-	cmp AL, 'P'
-	je PLAY
-	cmp AL, 'p'
-	je PLAY
-	cmp AL, 'H'
-	je HELP
-	cmp AL, 'h'
-	je HELP
-	cmp AL, 'Q'
-	je QUIT
-	cmp AL, 'q'
-	je QUIT
-
-	jmp WRONG_BUTTON
-
-	PLAY:
-		mov CURRENT_SCENE, 01h
-			call clear_screen
-			call draw_border
-			call draw_box_array
-			;call draw_box
-			call place_points
-			jmp DRAW_MAIN_END
-	HELP:
-		call help_handler
-	QUIT:
-		call clear_screen
-		MOV AX, 4C00h
-		int 21h
-
-	DRAW_MAIN_END:
+	collision_detected_pacman:
+	dec PLAYER_LIVES
+	call ghost_collision
 	ret
-draw_main_menu endp
+    collision_detected_enemy:
+         ; jeżeli tak, ustawiamy rejestr AL na 1
+        mov BL, 1
+    ret
+check_collision_enemy endp
+
+move_blinky proc
+
+     ; zapisywanie poprzedniej pozycji duszka, w celu wyczyszczenia
+    mov BL, BLINKY_X
+    mov CL, BLINKY_Y
+    mov BLINKY_PREV_X, BL
+    mov BLINKY_PREV_Y, CL
+
+
+ ; losowy kierunek ruchu
+	push dx
+
+	once_more:
+	push ax
+	push cx
+	mov AH, 2Ch
+	int 21h
+
+	pop cx
+	pop ax
+
+	xor DH, DH
+    and DL, 00000011b ; maskowanie wartości, tak aby wynosiły od 0 do 3
+
+	cmp DL, BACKWARDS_CHECK
+	je once_more
+
+    ; warunki sprawdzające gdzie skoczyć
+
+    cmp DL, 0
+    je move_blinky_up
+
+    cmp DL, 1
+    je move_blinky_left
+
+    cmp DL, 2
+    je move_blinky_down
+
+    cmp DL, 3
+    je move_blinky_right2
+
+	 MOVE_BLINKY_UP:
+		MOV DL, BACKWARDS_CHECK
+		MOV BACKWARDS_CHECK_BACKUP, DL
+	 	mov BACKWARDS_CHECK, 2
+		pop dx
+        mov AL, 1
+		sub BLINKY_Y, AL
+
+        call check_collision_enemy
+		cmp bl, 1 ; sprawdzamy czy nastąpiła kolizja
+        jz fix_blinky_y_up
+    ret
+
+    fix_blinky_y_up:
+		mov AL, BLINKY_PREV_Y
+        mov BLINKY_Y, AL
+		mov bl, BACKWARDS_CHECK_BACKUP
+		mov BACKWARDS_CHECK, bl
+		xor bx, bx
+    ret
+     ;---------------------------------
+    MOVE_BLINKY_LEFT:
+		MOV DL, BACKWARDS_CHECK
+		MOV BACKWARDS_CHECK_BACKUP, DL
+		pop dx
+		mov BACKWARDS_CHECK, 3
+        mov AX, 1
+		sub BLINKY_X, AL
+
+		call check_collision_enemy
+		cmp BL, 1 ; sprawdzamy czy nastąpiła kolizja
+        jz fix_blinky_x_left
+		xor bx, bx
+    ret
+	move_blinky_right2:
+	jmp move_blinky_right
+    fix_blinky_x_left:
+		mov bl, BACKWARDS_CHECK_BACKUP
+		mov BACKWARDS_CHECK, bl
+		xor bx, bx
+		mov AL, BLINKY_PREV_X
+        mov BLINKY_X, AL
+    ret
+
+	ret
+     ;---------------------------------
+    MOVE_BLINKY_DOWN:
+		MOV DL, BACKWARDS_CHECK
+		MOV BACKWARDS_CHECK_BACKUP, DL
+		mov BACKWARDS_CHECK, 0
+		pop dx
+        mov AL, 1
+        add BLINKY_Y, AL
+
+		call check_collision_enemy
+		cmp BL, 1 ; sprawdzamy czy nastąpiła kolizja
+        jz fix_blinky_y_down
+		xor bx, bx
+    ret
+
+    fix_blinky_y_down:
+		mov bl, BACKWARDS_CHECK_BACKUP
+		mov BACKWARDS_CHECK, bl
+		xor bx, bx
+		mov AL, BLINKY_PREV_Y
+		mov BLINKY_Y, AL
+    ret
+     ;---------------------------------
+    MOVE_BLINKY_RIGHT:
+		MOV DL, BACKWARDS_CHECK
+		MOV BACKWARDS_CHECK_BACKUP, DL
+		mov BACKWARDS_CHECK, 1
+		pop dx
+        mov AL, 1
+        add BLINKY_X, AL
+
+		call check_collision_enemy
+		cmp BL, 1 ; sprawdzamy czy nastąpiła kolizja
+        jz fix_blinky_x_right
+		xor bx, bx
+    ret
+
+    fix_blinky_x_right:
+		mov bl, BACKWARDS_CHECK_BACKUP
+		mov BACKWARDS_CHECK, bl
+		xor bx, bx
+		mov AL, BLINKY_PREV_X
+        mov BLINKY_X, AL
+dont_move:
+    ret
+
+move_blinky endp
+
+draw_enemy proc
+
+	 ; usun starego przeciwnika
+     ; ustawienie pozycji kursora
+	setCursor BLINKY_PREV_X, BLINKY_PREV_Y
+     ; rysowanie duszka
+	drawSymbol GHOST_OVERRIDE_CHAR, GHOST_OVERRIDE_COLOR, 1
+
+	 ; rysuj nowego duszka
+     ; ustawienie pozycji kursora
+	setCursor BLINKY_X, BLINKY_Y
+
+		 ; zapisz symbol który jest na aktualnym polu
+	mov AH, 08h
+	int 10h
+	mov GHOST_OVERRIDE_CHAR, AL
+	mov AL, AH
+	xor AH, AH
+	mov GHOST_OVERRIDE_COLOR, AX
+
+     ; rysowanie duszka
+	drawSymbol GHOST_CHAR, BLINKY_COLOR, 1
+
+    ret
+draw_enemy endp
 
 main proc
 	 ; wczytywanie danych z segmentu .data
@@ -772,6 +930,8 @@ main proc
 
 	call display_lives
 	call display_score
+	call move_blinky
+	call draw_enemy
 	call move_pacman
 	call draw_pacman
 
