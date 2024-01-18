@@ -2,17 +2,16 @@
 .model large
 .stack 100h
 .data
-	BACKWARDS_CHECK DB 0b
-	BACKWARDS_CHECK_BACKUP DB 0b
+
 
 	WINDOW_WIDTH DW 80d ; 80 znaków / 80 kolumn
 	WINDOW_HEIGHT DW 25d ; 25 znaków / 25 rzędów
 
 	GAME_WINDOW_START_X DB 10 ; początek okna właściwego gry (z pominięciem ramek) - nr kolumny
-	GAME_WINDOW_END_X DB 71  ; koniec okna właściwego gry (z pominięciem ramek) - nr kolumny
-	GAME_WINDOW_START_Y DB 2 ; początek okna właściwego gry (z pominięciem ramek) - nr rzędu
+	GAME_WINDOW_END_X DB 70  ; koniec okna właściwego gry (z pominięciem ramek) - nr kolumny
+	GAME_WINDOW_START_Y DB 1 ; początek okna właściwego gry (z pominięciem ramek) - nr rzędu
 	GAME_WINDOW_END_Y DB 22 ; koniec okna właściwego gry (z pominięciem ramek) - nr rzędu
-
+ 
 	PACMAN_X DB 10 		; pacman - pozycja X
 	PACMAN_PREV_X DB 10 ; zmienna do zapamietywania poprzedniej pozycji X - uzywana do czyszczenia
 	PACMAN_Y DB 10 		; pacman - pozycja Y
@@ -20,35 +19,47 @@
 	PACMAN_SPEED DB 1   ; predkosc pacmana, najlepiej nie zmieniac gdyz jest to tryb tekstowy
 	PACMAN_COLOR DW 0Eh
 
-	GHOST_OVERRIDE_COLOR DW 07h;
-	GHOST_OVERRIDE_CHAR DB 07h ; char ktorego nadpisal duszek
+	
 	 ; czerwony duszek
 	BLINKY_X DB 44
 	BLINKY_PREV_X DB 44
 	BLINKY_Y DB 9
 	BLINKY_PREV_Y DB 9
 	BLINKY_COLOR DW 0Ch
+	BLINKY_OVERRIDE_COLOR DW 0Fh;
+	BLINKY_OVERRIDE_CHAR DB 07h ; char ktorego nadpisal duszek
+	BACKWARDS_CHECK_BLINKY DB 0b
+	BACKWARDS_CHECK_BLINKY_BACKUP DB 0b
+	
+	PINKY_X DB 35
+	PINKY_PREV_X DB 35
+	PINKY_Y DB 9
+	PINKY_PREV_Y DB 9
+	PINKY_COLOR DW 0Dh
+	PINKY_OVERRIDE_COLOR DW 0Fh;
+	PINKY_OVERRIDE_CHAR DB 07h ; char ktorego nadpisal duszek
+	BACKWARDS_CHECK_PINKY DB 0b
+	BACKWARDS_CHECK_PINKY_BACKUP DB 0b
 
-     ; rozowy duszek
-	PINKY_X DW ?
-	PINKY_PREV_X DW ?
-	PINKY_Y DW ?
-	PINKY_PREV_Y DW ?
-	PINKY_COLOR DW ?
+	INKY_X DB 44
+	INKY_PREV_X DB 44
+	INKY_Y DB 15
+	INKY_PREV_Y DB 15
+	INKY_COLOR DW 0Bh
+	INKY_OVERRIDE_COLOR DW 0Fh;
+	INKY_OVERRIDE_CHAR DB 07h ; char ktorego nadpisal duszek
+	BACKWARDS_CHECK_INKY DB 0b
+	BACKWARDS_CHECK_INKY_BACKUP DB 0b
 
-     ; niebieski duszek
-	INKY_X DW ?
-	INKY_PREV_X DW ?
-	INKY_Y DW ?
-	INKY_PREV_Y DW ?
-	INKY_COLOR DW ?
-
-	 ; pomaranczowy duszek
-	CLYDE_X DW ?
-	CLYDE_PREV_X DW ?
-	CLYDE_Y DW ?
-	CLYDE_PREV_Y DW ?
-	CLYDE_COLOR DW ?
+	CLYDE_X DB 35
+	CLYDE_PREV_X DB 35
+	CLYDE_Y DB 15
+	CLYDE_PREV_Y DB 15
+	CLYDE_COLOR DW 06h
+	CLYDE_OVERRIDE_COLOR DW 0Fh;
+	CLYDE_OVERRIDE_CHAR DB 07h ; char ktorego nadpisal duszek
+	BACKWARDS_CHECK_CLYDE DB 0b
+	BACKWARDS_CHECK_CLYDE_BACKUP DB 0b
 
 	TIME_BEFORE DB 0 	  ; zmienna używana do sprawdzenia czy czas się zmienił (zegar)
 	LAST_KEYSTROKE DB 61h ; zmienna zapisujaca ostatnio wcisniety klawisz (pacman porusza sie caly czas w tą stronę)
@@ -57,13 +68,20 @@
 	POINT_CHAR DB 07h 	 ; znak punktu
 	PACMAN_CHAR DB 01h   ; znak pacmana
 	GHOST_CHAR DB 21h ; znak duszka
-
+	
 	PLAYER_LIVES DW 1                      ; liczba zyc gracza, domyslnie rowna 3
 	LIVES_STRING DB 'LIVES', 0ah, 0dh, '$' ; napis lives do wypisania na ekranie
 	SCORE_STRING DB 'SCORE', 0ah, 0dh, '$' ; napis score do wypisania ekranie
-	PLAYER_SCORE DW 0      				   ; liczba punktów gracza, na starcie wynosi 0
+	PLAYER_SCORE DW 1      				   ; liczba punktów gracza, na starcie wynosi 0
+	TOTAL_POINT DW 0                 ; liczba punktow rysowanych na mapie
 	DIGIT_DISPLAY_NOE DB 0				   ; zmienna przechowujaca na ktorej pozycji ma zostac wyswietlona dana cyfra wyniku
 
+	DIFFICULTY_LEVEL DB 0 ; 0 - EASY, 1 - NORMAL, 2 - HARD
+	
+	DIFFICULTY_EASY_STRING DB 'PRESS D TO CHANGE DIFFICULTY: EASY  ', 0ah, 0dh, '$'
+	DIFFICULTY_NORMAL_STRING DB 'PRESS D TO CHANGE DIFFICULTY: NORMAL', 0ah, 0dh, '$'
+	DIFFICULTY_HARD_STRING DB 'PRESS D TO CHANGE DIFFICULTY: HARD', 0ah, 0dh, '$'
+	
 	MAIN_MENU_STRING DB 'MAIN MENU', 0ah, 0dh, '$'
 	PLAY_STRING DB 'PRESS P TO PLAY', 0ah, 0dh, '$'
 	HELP_STRING DB 'PRESS H FOR HELP', 0ah, 0dh, '$'
@@ -71,17 +89,18 @@
 	HELPPAGE_STRING_1 DB 'PRESS W TO MOVE UP', 0ah, 0dh, '$'
 	HELPPAGE_STRING_2 DB 'PRESS A TO MOVE DOWN', 0ah, 0dh, '$'
 	HELPPAGE_STRING_3 DB 'PRESS S TO MOVE LEFT', 0ah, 0dh, '$'
-	HELPPAGE_STRING_4 DB 'PRESS D TO MOVE RIGHT', 0ah, 0dh, '$'
+	HELPPAGE_STRING_4 DB 'PRESS D TO MOVE RIGHT                ', 0ah, 0dh, '$'
 	HELPPAGE_STRING_5 DB 'PRESS R TO RESTART', 0ah, 0dh, '$'
 	HELPPAGE_STRING_6 DB '<- PRESS Q TO BACK', 0ah, 0dh, '$'
 	LIVE_LOST_STRING db 'U HAVE LOST A LIVE! BE CAREFUL!', 0ah, 0dh, '$'
 	CURRENT_SCENE DB 0 ; 2 - HELP 1 - GRA, 0 - MAIN MENU
 
-	MAP_WALLS_X DW 11, 12, 13, 14, 15, 16, 11, 12, 13, 14, 15, 16, 11, 12, 13, 14, 15, 16, 11, 12, 13, 14, 15, 16, 11, 12, 13, 14, 15, 16, 11, 12, 13, 14, 15, 16, 18, 19, 20, 18, 18, 18, 19, 20, 20, 20, 11, 12, 13, 14, 15, 16, 11, 12, 13, 14, 15, 16, 11, 12, 13, 14, 15, 16, 19, 20, 18, 18, 19, 20, 18, 19, 20, 18, 19, 20, 22, 22, 22, 22, 22, 22, 22, 22, 22, 24, 25, 26, 27, 28, 29, 24, 25, 26, 27, 28, 29, 24, 25, 26, 27, 28, 29, 24, 25, 26, 27, 28, 29, 24, 25, 26, 27, 28, 29, 24, 25, 26, 27, 28, 29, 31, 32, 33, 31, 33, 31, 33, 31, 33, 34, 35, 36, 37, 38, 39, 40, 30, 32, 32, 32, 39, 40, 39, 40, 39, 40, 37, 38, 35, 36, 37, 35, 35, 34, 35, 36, 37, 38, 34, 34, 36, 37, 38, 39, 40, 36, 36, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 31, 32, 31, 32, 30, 30, 30, 31, 32, 29, 28, 27, 26, 25, 24, 23, 23, 0
-	MAP_WALLS_Y DW  3,  3,  3,  3,  3,  3,  4,  4,  4,  4,  4,  4,  5,  5,  5,  5,  5,  5,  6,  6,  6,  6,  6,  6,  7,  7,  7,  7,  7,  7,  8,  8,  8,  8,  8,  8,  3,  3,  3,  4,  5,  7,  7,  7,  6,  5, 10, 10, 10, 10, 10, 10, 11, 11, 11, 11, 11, 11, 12, 12, 12 ,12 ,12 ,12,  9,  9,  9, 10, 10, 10, 11, 11, 11, 12, 12, 12,  2,  3,  5,  6,  7,  8,  9, 10, 12,  2,  2,  2,  2,  2,  2,  3,  3,  3,  3,  3,  3,  5,  5,  5,  5,  5,  5,  6,  6,  6,  6,  6,  6,  8,  8,  8,  8,  8,  8,  9,  9,  9,  9,  9,  9,  2,  2,  2,  4,  4,  5,  5,  6,  6,  2,  2,  2,  2,  2,  2,  2,  2,  4,  5,  6,  3,  3,  5,  5,  6,  6,  6,  6,  4,  4,  4,  5,  6,  8,  8,  8,  8,  8,  9, 10, 10, 10, 10, 10, 10, 11, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 10, 10,  9,  9, 10,  9,  8,  8,  8, 10, 10, 10, 10, 10, 10,  2,  3, 0
+	MAP_WALLS_X DW 11, 12, 13, 14, 15, 16, 11, 12, 13, 14, 15, 16, 11, 12, 13, 14, 15, 16, 11, 12, 13, 14, 15, 16, 11, 12, 13, 14, 15, 16, 11, 12, 13, 14, 15, 16, 18, 19, 20, 18, 18, 18, 19, 20, 20, 20, 11, 12, 13, 14, 15, 16, 11, 12, 13, 14, 15, 16, 11, 12, 13, 14, 15, 16, 19, 20, 18, 18, 19, 20, 18, 19, 20, 18, 19, 20, 22, 22, 22, 22, 22, 22, 22, 22, 22, 24, 25, 26, 27, 28, 29, 24, 25, 26, 27, 28, 29, 24, 25, 26, 27, 28, 29, 24, 25, 26, 27, 28, 29, 24, 25, 26, 27, 28, 29, 24, 25, 26, 27, 28, 29, 31, 32, 33, 31, 33, 31, 33, 31, 33, 34, 35, 36, 37, 38, 39, 40, 30, 32, 32, 32, 39, 40, 39, 40, 39, 40, 37, 38, 35, 36, 37, 35, 35, 34, 35, 36, 37, 38, 34, 34, 36, 37, 38, 39, 40, 36, 36, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 31, 32, 31, 32, 30, 30, 30, 31, 32, 29, 28, 27, 26, 25, 24, 23, 23, 39, 38, 37, 36, 39, 38, 37, 36, 0
+	MAP_WALLS_Y DW  3,  3,  3,  3,  3,  3,  4,  4,  4,  4,  4,  4,  5,  5,  5,  5,  5,  5,  6,  6,  6,  6,  6,  6,  7,  7,  7,  7,  7,  7,  8,  8,  8,  8,  8,  8,  3,  3,  3,  4,  5,  7,  7,  7,  6,  5, 10, 10, 10, 10, 10, 10, 11, 11, 11, 11, 11, 11, 12, 12, 12 ,12 ,12 ,12,  9,  9,  9, 10, 10, 10, 11, 11, 11, 12, 12, 12,  2,  3,  5,  6,  7,  8,  9, 10, 12,  2,  2,  2,  2,  2,  2,  3,  3,  3,  3,  3,  3,  5,  5,  5,  5,  5,  5,  6,  6,  6,  6,  6,  6,  8,  8,  8,  8,  8,  8,  9,  9,  9,  9,  9,  9,  2,  2,  2,  4,  4,  5,  5,  6,  6,  2,  2,  2,  2,  2,  2,  2,  2,  4,  5,  6,  3,  3,  5,  5,  6,  6,  6,  6,  4,  4,  4,  5,  6,  8,  8,  8,  8,  8,  9, 10, 10, 10, 10, 10, 10, 11, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 10, 10,  9,  9, 10,  9,  8,  8,  8, 10, 10, 10, 10, 10, 10,  2 , 3, 11, 11, 11, 11, 12, 12, 12 ,12, 0
 .code
 
 displayStringAtPosition MACRO row, col, string_ptr
+	pusha
 		mov AH, 02h
 		mov BH, 00h
 		mov DH, row
@@ -91,6 +110,7 @@ displayStringAtPosition MACRO row, col, string_ptr
 		mov ah, 09h
 		lea DX, string_ptr
 		int 21h
+	popa
 ENDM
 
 setCursor MACRO x, y
@@ -223,10 +243,10 @@ SIDE_BORDER:
 draw_border endp
 
 draw_box_array proc
-
+	pusha
 	mov si, offset MAP_WALLS_X
 	mov di, offset MAP_WALLS_Y
-
+	mov bl, 07h
 DRAW_BOX_ARRAY_LOOP:
 
     ; Sprawdzenie warunku zakończenia rysowania (wartość 0 w tablicy)
@@ -242,7 +262,7 @@ DRAW_BOX_ARRAY_LOOP:
     int 10h
 
     ; Rysowanie znaku 'BORDER_CHAR'
-    mov AH, 0Ah
+    mov AH, 09h
     mov AL, BORDER_CHAR
     mov BH, 0
     mov CX, 1
@@ -259,7 +279,7 @@ DRAW_BOX_ARRAY_LOOP:
     int 10h
 
     ; Rysowanie znaku 'BORDER_CHAR'
-    mov AH, 0Ah
+    mov AH, 09h
     mov AL, BORDER_CHAR
     mov BH, 0
     mov CX, 1
@@ -276,7 +296,7 @@ DRAW_BOX_ARRAY_LOOP:
     int 10h
 
     ; Rysowanie znaku 'BORDER_CHAR'
-    mov AH, 0Ah
+    mov AH, 09h
     mov AL, BORDER_CHAR
     mov BH, 0
     mov CX, 1
@@ -295,7 +315,7 @@ DRAW_BOX_ARRAY_LOOP:
     int 10h
 
     ; Rysowanie znaku 'BORDER_CHAR'
-    mov AH, 0Ah
+    mov AH, 09h
     mov AL, BORDER_CHAR
     mov BH, 0
     mov CX, 1
@@ -309,16 +329,16 @@ DRAW_BOX_ARRAY_LOOP:
     jmp DRAW_BOX_ARRAY_LOOP
 
 	DRAW_BOX_ARRAY_END:
+	popa
     ret
 draw_box_array endp
 
  ; funkcja wypełnia całą planszę punktami, które zjada nasz pacman
 place_points proc ; DH - RZAD ; DL - KOLUMNA
-
+	pusha
+	
      ; ustawienie pozycji startowej
     mov DH, GAME_WINDOW_START_Y
-	dec DH
-
 	NEXT_ROW:
 
 		mov DL, GAME_WINDOW_START_X ; "wyzerowanie" kolumn
@@ -326,9 +346,7 @@ place_points proc ; DH - RZAD ; DL - KOLUMNA
 
     PLACE:
 
-		mov AH, 02h
-		mov BH, 0
-		int 10h
+		setCursor DL, DH
 
 		 ; odczytanie znaku w aktualnym polu
 		mov AH, 08h
@@ -338,10 +356,13 @@ place_points proc ; DH - RZAD ; DL - KOLUMNA
 		 ; jeżeli jest to # to pomijamy wypisanie znaku punktu
 		cmp AL, BORDER_CHAR
 		je SKIP_PLACE_POINT
-
+		
+		cmp AL, ' '
+		jne SKIP_PLACE_POINT
+		
 		 ; wypisanie znaku punktu
 		drawSymbol POINT_CHAR, 0Fh, 1
-
+		;inc TOTAL_POINT
 	SKIP_PLACE_POINT:
 
 		inc DL 					  ; zwiększamy kolumnę o jeden
@@ -350,9 +371,60 @@ place_points proc ; DH - RZAD ; DL - KOLUMNA
 
 		cmp DH, GAME_WINDOW_END_Y ; sprawdzamy czy skończyły się rzędy
 		jne NEXT_ROW
-
+	;sub TOTAL_POINT, 1
+	
+	mov TOTAL_POINT, 518
+	
+	;setCursor 10, 10
+	;drawSymbol 'X' 0Fh, 1
+	
+	popa
 	ret
 place_points endp
+
+load_defaults proc
+	mov PACMAN_X, 10
+	mov PACMAN_PREV_X, 10
+	mov PACMAN_Y, 10
+	mov PACMAN_PREV_Y, 10
+
+	mov BLINKY_X, 44
+	mov BLINKY_PREV_X, 44
+	mov BLINKY_Y, 9
+	mov BLINKY_PREV_Y, 9
+	mov BACKWARDS_CHECK_BLINKY, 0b
+	mov BACKWARDS_CHECK_BLINKY_BACKUP, 0b	
+	mov BLINKY_OVERRIDE_CHAR, 07h
+	mov BLINKY_OVERRIDE_COLOR, 0Fh
+	
+	mov PINKY_X, 35
+	mov PINKY_PREV_X, 35
+	mov PINKY_Y, 10
+	mov PINKY_PREV_Y, 10
+	mov PINKY_OVERRIDE_COLOR, 0Fh;
+	mov PINKY_OVERRIDE_CHAR, 07h 
+	mov BACKWARDS_CHECK_PINKY, 0b
+	mov BACKWARDS_CHECK_PINKY_BACKUP, 0b
+
+	mov INKY_X, 44
+	mov INKY_PREV_X, 44
+	mov INKY_Y, 15
+	mov INKY_PREV_Y, 15
+	mov INKY_OVERRIDE_COLOR, 0Fh;
+	mov INKY_OVERRIDE_CHAR, 07h
+	mov BACKWARDS_CHECK_INKY, 0b
+	mov BACKWARDS_CHECK_INKY_BACKUP, 0b
+
+	mov CLYDE_X, 35
+	mov CLYDE_PREV_X, 35
+	mov CLYDE_Y, 15
+	mov CLYDE_PREV_Y, 15
+	mov CLYDE_OVERRIDE_COLOR, 0Fh;
+	mov CLYDE_OVERRIDE_CHAR, 07h
+	mov BACKWARDS_CHECK_CLYDE, 0b
+	mov BACKWARDS_CHECK_CLYDE_BACKUP, 0b
+ret
+load_defaults endp
 
 help_handler proc
 		mov CURRENT_SCENE, 02h
@@ -373,24 +445,7 @@ help_handler proc
 		je MENU_START
 
 		jmp WRONG_BUTTON_HELP
-	ret
 help_handler endp
-
-load_defaults proc
-	mov PACMAN_X, 10
-	mov PACMAN_PREV_X, 10
-	mov PACMAN_Y, 10
-	mov PACMAN_PREV_Y, 10
-
-	mov BLINKY_X, 44
-	mov BLINKY_PREV_X, 44
-	mov BLINKY_Y, 9
-	mov BLINKY_PREV_Y, 9
-
-	mov BACKWARDS_CHECK, 0b
-	mov BACKWARDS_CHECK_BACKUP, 0b
-ret
-load_defaults endp
 
 draw_main_menu proc
 	call load_defaults
@@ -401,14 +456,31 @@ draw_main_menu proc
 	displayStringAtPosition 4, 4, MAIN_MENU_STRING
 	displayStringAtPosition 5, 4, PLAY_STRING
 	displayStringAtPosition 6, 4, HELP_STRING
-	displayStringAtPosition 7, 4, QUIT_STRING
-
+	displayStringAtPosition 8, 4, QUIT_STRING
+	cmp DIFFICULTY_LEVEL, 2
+	je hard
+	cmp DIFFICULTY_LEVEL, 1
+	je normal
+	
+	displayStringAtPosition 7, 4, DIFFICULTY_EASY_STRING
+	jmp difficulties
+	normal:
+	displayStringAtPosition 7, 4, DIFFICULTY_NORMAL_STRING
+	jmp difficulties
+	hard:
+	displayStringAtPosition 7, 4, DIFFICULTY_HARD_STRING
+	difficulties:
+	
 	call play_sound
 	WRONG_BUTTON:
 
 	mov AH, 00h
 	int 16h
-
+	
+	cmp AL, 'D'
+	je DIFFICULTY_CHANGE
+	cmp AL, 'd'
+	je DIFFICULTY_CHANGE
 	cmp AL, 'P'
 	je PLAY
 	cmp AL, 'p'
@@ -423,43 +495,56 @@ draw_main_menu proc
 	je QUIT
 
 	jmp WRONG_BUTTON
-
+	DIFFICULTY_CHANGE:
+	inc DIFFICULTY_LEVEL
+	and DIFFICULTY_LEVEL, 3
+	jmp MENU_START
 	PLAY:
+		mov TOTAL_POINT, 0
 		mov CURRENT_SCENE, 01h
 			call clear_screen
 			call draw_border
 			call draw_box_array
-			call place_points
+			;call place_points
 
 			mov PLAYER_SCORE, 0
 			mov PLAYER_LIVES, 3
-			jmp DRAW_MAIN_END
+			jmp draw_end
 	HELP:
 		call help_handler
+		jmp draw_end
 	QUIT:
-		call clear_screen
+		;call clear_screen
 		MOV AX, 4C00h
 		int 21h
 
-	DRAW_MAIN_END:
+	draw_end:
 	ret
 draw_main_menu endp
 
 ghost_collision proc
 cmp PLAYER_LIVES, 0
-je end_game
+je end_game_mid
 
 	setCursor PACMAN_X, PACMAN_Y
 	drawSymbol ' ', 0, 1
 
 	setCursor PACMAN_PREV_X, PACMAN_PREV_Y
 	drawSymbol ' ', 0, 1
-
-	;setCursor BLINKY_X, BLINKY_Y
-	;drawSymbol ' ', 0, 1
-
-	;setCursor BLINKY_PREV_X, BLINKY_PREV_Y
-	;drawSymbol ' ', 0, 1
+	
+	;pobranie symbolu ktory wczesniej byl na tym polu 
+	
+	; sekcja skokow (wynika z ograniczonego zasiegu skoku)
+	jmp pomin_skok
+	end_game_mid:
+	jmp end_game
+	pomin_skok:
+	
+	setCursor BLINKY_X, BLINKY_Y
+	drawSymbol ' ', 0, 1
+	
+	setCursor BLINKY_PREV_X, BLINKY_PREV_Y
+	drawSymbol BLINKY_OVERRIDE_CHAR, 0Fh, 1
 
 	call load_defaults
 
@@ -504,6 +589,7 @@ check_collision proc
 
 	point_detected:
 		 ; zwiększanie punktów gracza jeśli punkt
+		dec TOTAL_POINT
 		inc PLAYER_SCORE
 		call play_sound
 	ret
@@ -705,9 +791,12 @@ display_lives proc
     ret
 display_lives endp
 
-check_collision_enemy proc
+check_collision_enemy MACRO GHOST_X, GHOST_Y
+	LOCAL collision_detected_enemy
+	LOCAL collision_detected_pacman
+	LOCAL end_macro_n
 	 ; ustawienie pozycji kursora na NOWĄ pozycję pacmana (juz przesunieta)
-	setCursor BLINKY_X, BLINKY_Y
+	setCursor GHOST_X, GHOST_Y
 
 	 ; odczytanie znaku z pozycji na której wylądować ma pacman
 	mov AH, 08h
@@ -723,25 +812,37 @@ check_collision_enemy proc
 
 	 ; jeżeli nie, to czyścimy rejestr AL
 	xor BL, BL
-	ret
+	jmp end_macro_n
 
 	collision_detected_pacman:
 	dec PLAYER_LIVES
 	call ghost_collision
-	ret
+	jmp end_macro_n
     collision_detected_enemy:
          ; jeżeli tak, ustawiamy rejestr AL na 1
         mov BL, 1
-    ret
-check_collision_enemy endp
+	end_macro_n:
+ENDM
 
-move_blinky proc
-
+move_ghost MACRO GHOST_X, GHOST_Y, GHOST_PREV_X, GHOST_PREV_Y, BACKWARDS_CHECK_GHOST, BACKWARDS_CHECK_GHOST_BACKUP
+	LOCAL once_more
+	LOCAL move_blinky_up
+	LOCAL move_blinky_down
+	LOCAL move_blinky_right
+	LOCAL move_blinky_down2
+	LOCAL move_blinky_right2
+	LOCAL dont_move
+	LOCAL fix_blinky_x_left
+	LOCAL fix_blinky_x_right
+	LOCAL fix_blinky_y_down
+	LOCAL fix_blinky_y_up
+	LOCAL move_blinky_left
+	
      ; zapisywanie poprzedniej pozycji duszka, w celu wyczyszczenia
-    mov BL, BLINKY_X
-    mov CL, BLINKY_Y
-    mov BLINKY_PREV_X, BL
-    mov BLINKY_PREV_Y, CL
+    mov BL, GHOST_X
+    mov CL, GHOST_Y
+    mov GHOST_PREV_X, BL
+    mov GHOST_PREV_Y, CL
 
 
  ; losowy kierunek ruchu
@@ -759,7 +860,7 @@ move_blinky proc
 	xor DH, DH
     and DL, 00000011b ; maskowanie wartości, tak aby wynosiły od 0 do 3
 
-	cmp DL, BACKWARDS_CHECK
+	cmp DL, BACKWARDS_CHECK_GHOST
 	je once_more
 
     ; warunki sprawdzające gdzie skoczyć
@@ -771,129 +872,180 @@ move_blinky proc
     je move_blinky_left
 
     cmp DL, 2
-    je move_blinky_down
+    je move_blinky_down2
 
     cmp DL, 3
     je move_blinky_right2
 
 	 MOVE_BLINKY_UP:
-		MOV DL, BACKWARDS_CHECK
-		MOV BACKWARDS_CHECK_BACKUP, DL
-	 	mov BACKWARDS_CHECK, 2
+		MOV DL, BACKWARDS_CHECK_GHOST
+		MOV BACKWARDS_CHECK_GHOST_BACKUP, DL
+	 	mov BACKWARDS_CHECK_GHOST, 2
 		pop dx
         mov AL, 1
-		sub BLINKY_Y, AL
+		sub GHOST_Y, AL
 
-        call check_collision_enemy
+        check_collision_enemy GHOST_X, GHOST_Y
 		cmp bl, 1 ; sprawdzamy czy nastąpiła kolizja
         jz fix_blinky_y_up
-    ret
+    jmp dont_move
 
     fix_blinky_y_up:
-		mov AL, BLINKY_PREV_Y
-        mov BLINKY_Y, AL
-		mov bl, BACKWARDS_CHECK_BACKUP
-		mov BACKWARDS_CHECK, bl
+		mov AL, GHOST_PREV_Y
+        mov GHOST_Y, AL
+		mov bl, BACKWARDS_CHECK_GHOST_BACKUP
+		mov BACKWARDS_CHECK_GHOST, bl
 		xor bx, bx
-    ret
+    jmp dont_move
+	move_blinky_right2:
+	jmp move_blinky_right
+	move_blinky_down2:
+	jmp move_blinky_down
      ;---------------------------------
     MOVE_BLINKY_LEFT:
-		MOV DL, BACKWARDS_CHECK
-		MOV BACKWARDS_CHECK_BACKUP, DL
+		MOV DL, BACKWARDS_CHECK_GHOST
+		MOV BACKWARDS_CHECK_GHOST_BACKUP, DL
 		pop dx
-		mov BACKWARDS_CHECK, 3
+		mov BACKWARDS_CHECK_GHOST, 3
         mov AX, 1
-		sub BLINKY_X, AL
+		sub GHOST_X, AL
 
-		call check_collision_enemy
+        check_collision_enemy GHOST_X, GHOST_Y
 		cmp BL, 1 ; sprawdzamy czy nastąpiła kolizja
         jz fix_blinky_x_left
 		xor bx, bx
-    ret
-	move_blinky_right2:
-	jmp move_blinky_right
-    fix_blinky_x_left:
-		mov bl, BACKWARDS_CHECK_BACKUP
-		mov BACKWARDS_CHECK, bl
-		xor bx, bx
-		mov AL, BLINKY_PREV_X
-        mov BLINKY_X, AL
-    ret
+    jmp dont_move
 
-	ret
+	
+    fix_blinky_x_left:
+		mov bl, BACKWARDS_CHECK_GHOST_BACKUP
+		mov BACKWARDS_CHECK_GHOST, bl
+		xor bx, bx
+		mov AL, GHOST_PREV_X
+        mov GHOST_X, AL
+    jmp dont_move
+
      ;---------------------------------
     MOVE_BLINKY_DOWN:
-		MOV DL, BACKWARDS_CHECK
-		MOV BACKWARDS_CHECK_BACKUP, DL
-		mov BACKWARDS_CHECK, 0
+		MOV DL, BACKWARDS_CHECK_GHOST
+		MOV BACKWARDS_CHECK_GHOST_BACKUP, DL
+		mov BACKWARDS_CHECK_GHOST, 0
 		pop dx
         mov AL, 1
-        add BLINKY_Y, AL
+        add GHOST_Y, AL
 
-		call check_collision_enemy
+        check_collision_enemy GHOST_X, GHOST_Y
 		cmp BL, 1 ; sprawdzamy czy nastąpiła kolizja
         jz fix_blinky_y_down
 		xor bx, bx
-    ret
+    jmp dont_move
 
     fix_blinky_y_down:
-		mov bl, BACKWARDS_CHECK_BACKUP
-		mov BACKWARDS_CHECK, bl
+		mov bl, BACKWARDS_CHECK_GHOST_BACKUP
+		mov BACKWARDS_CHECK_GHOST, bl
 		xor bx, bx
-		mov AL, BLINKY_PREV_Y
-		mov BLINKY_Y, AL
-    ret
+		mov AL, GHOST_PREV_Y
+		mov GHOST_Y, AL
+    jmp dont_move
      ;---------------------------------
     MOVE_BLINKY_RIGHT:
-		MOV DL, BACKWARDS_CHECK
-		MOV BACKWARDS_CHECK_BACKUP, DL
-		mov BACKWARDS_CHECK, 1
+		MOV DL, BACKWARDS_CHECK_GHOST
+		MOV BACKWARDS_CHECK_GHOST_BACKUP, DL
+		mov BACKWARDS_CHECK_GHOST, 1
 		pop dx
         mov AL, 1
-        add BLINKY_X, AL
+        add GHOST_X, AL
 
-		call check_collision_enemy
+        check_collision_enemy GHOST_X, GHOST_Y
 		cmp BL, 1 ; sprawdzamy czy nastąpiła kolizja
         jz fix_blinky_x_right
 		xor bx, bx
-    ret
+    jmp dont_move
 
     fix_blinky_x_right:
-		mov bl, BACKWARDS_CHECK_BACKUP
-		mov BACKWARDS_CHECK, bl
+		mov bl, BACKWARDS_CHECK_GHOST_BACKUP
+		mov BACKWARDS_CHECK_GHOST, bl
 		xor bx, bx
-		mov AL, BLINKY_PREV_X
-        mov BLINKY_X, AL
+		mov AL, GHOST_PREV_X
+        mov GHOST_X, AL
 dont_move:
-    ret
+ENDM 
 
-move_blinky endp
-
-draw_enemy proc
-
+draw_enemy MACRO GHOST_X, GHOST_Y, GHOST_PREV_X, GHOST_PREV_Y, GHOST_OVERRIDE_CHAR, GHOST_OVERRIDE_COLOR, GHOST_COLOR
+	local TWO_GHOSTS_MEETUP
 	 ; usun starego przeciwnika
      ; ustawienie pozycji kursora
-	setCursor BLINKY_PREV_X, BLINKY_PREV_Y
+	setCursor GHOST_PREV_X, GHOST_PREV_Y
      ; rysowanie duszka
 	drawSymbol GHOST_OVERRIDE_CHAR, GHOST_OVERRIDE_COLOR, 1
 
 	 ; rysuj nowego duszka
      ; ustawienie pozycji kursora
-	setCursor BLINKY_X, BLINKY_Y
+	setCursor GHOST_X, GHOST_Y
 
 		 ; zapisz symbol który jest na aktualnym polu
 	mov AH, 08h
 	int 10h
+	cmp AL, GHOST_CHAR
+	je two_ghosts_meetup
 	mov GHOST_OVERRIDE_CHAR, AL
 	mov AL, AH
 	xor AH, AH
 	mov GHOST_OVERRIDE_COLOR, AX
+	
+	two_ghosts_meetup:
+	mov bh, point_char
+	mov GHOST_OVERRIDE_CHAR, bh
+	MOV GHOST_OVERRIDE_COLOR, 0Fh
+	
 
      ; rysowanie duszka
-	drawSymbol GHOST_CHAR, BLINKY_COLOR, 1
+	drawSymbol GHOST_CHAR, GHOST_COLOR, 1
 
-    ret
-draw_enemy endp
+ENDM
+
+blinky_management proc
+	move_ghost BLINKY_X, BLINKY_Y, BLINKY_PREV_X, BLINKY_PREV_Y, BACKWARDS_CHECK_BLINKY, BACKWARDS_CHECK_BLINKY_BACKUP
+	draw_enemy BLINKY_X, BLINKY_Y, BLINKY_PREV_X, BLINKY_PREV_Y, BLINKY_OVERRIDE_CHAR, BLINKY_OVERRIDE_COLOR, BLINKY_COLOR
+ret
+blinky_management endp
+
+pinky_management proc
+	move_ghost PINKY_X, PINKY_Y, PINKY_PREV_X, PINKY_PREV_Y, BACKWARDS_CHECK_PINKY, BACKWARDS_CHECK_PINKY_BACKUP
+	draw_enemy PINKY_X, PINKY_Y, PINKY_PREV_X, PINKY_PREV_Y, PINKY_OVERRIDE_CHAR, PINKY_OVERRIDE_COLOR, PINKY_COLOR
+ret
+pinky_management endp
+
+inky_management proc
+	move_ghost INKY_X, INKY_Y, INKY_PREV_X, INKY_PREV_Y, BACKWARDS_CHECK_INKY, BACKWARDS_CHECK_INKY_BACKUP
+	draw_enemy INKY_X, INKY_Y, INKY_PREV_X, INKY_PREV_Y, INKY_OVERRIDE_CHAR, INKY_OVERRIDE_COLOR, INKY_COLOR
+ret
+inky_management endp
+
+clyde_management proc
+	move_ghost CLYDE_X, CLYDE_Y, CLYDE_PREV_X, CLYDE_PREV_Y, BACKWARDS_CHECK_CLYDE, BACKWARDS_CHECK_CLYDE_BACKUP
+	draw_enemy CLYDE_X, CLYDE_Y, CLYDE_PREV_X, CLYDE_PREV_Y, CLYDE_OVERRIDE_CHAR, CLYDE_OVERRIDE_COLOR, CLYDE_COLOR
+ret
+clyde_management endp
+
+draw_all_movables proc
+	call display_lives
+	call display_score
+
+	call blinky_management
+	call pinky_management
+	
+	cmp DIFFICULTY_LEVEL, 1
+	jl skip
+	call inky_management
+	cmp DIFFICULTY_LEVEL, 2
+	jl skip
+	call clyde_management
+	skip:
+	call move_pacman
+	call draw_pacman
+ret
+draw_all_movables endp
 
 main proc
 	 ; wczytywanie danych z segmentu .data
@@ -927,18 +1079,25 @@ main proc
 	mov dx, 0FFFFh
 	mov ah, 86h
 	int 15h
+	
+	call draw_all_movables
 
-	call display_lives
-	call display_score
-	call move_blinky
-	call draw_enemy
-	call move_pacman
-	call draw_pacman
-
+	cmp TOTAL_POINT, 0
+	je POINT_RESET
 	jmp CHECK_TIME 		; powtarzamy proces
 
 	MAIN_MENU:
 		call draw_main_menu
+		jmp CHECK_TIME
+	
+	POINT_RESET:
+		setCursor PACMAN_X, PACMAN_Y
+		drawSymbol ' ', 0, 1
+		setCursor BLINKY_X, BLINKY_Y
+		drawSymbol ' ', 0, 1
+		call load_defaults
+		call place_points
+		mov LAST_KEYSTROKE, 61h ; aby stan gry sie wstrzymal
 		jmp CHECK_TIME
 
 	;mov AX, 4C00h 		; zakończenie programu
