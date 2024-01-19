@@ -1063,7 +1063,7 @@ draw_all_movables proc
 
 	call blinky_management
 	call pinky_management
-	
+
 	cmp DIFFICULTY_LEVEL, 1
 	jl skip
 	call inky_management
@@ -1108,7 +1108,7 @@ main proc
 	mov dx, 0FFFFh
 	mov ah, 86h
 	int 15h
-	
+
 	call draw_all_movables
 
 	cmp TOTAL_POINT, 0
@@ -1118,18 +1118,16 @@ main proc
 	MAIN_MENU:
 		call draw_main_menu
 		jmp CHECK_TIME
-	
+
 	POINT_RESET:
 		setCursor PACMAN_X, PACMAN_Y
 		drawSymbol ' ', 0, 1
 		setCursor BLINKY_X, BLINKY_Y
 		drawSymbol ' ', 0, 1
+
 		call load_defaults
 		call place_points
-		mov LAST_KEYSTROKE, 61h ; aby stan gry sie wstrzymal
 		jmp CHECK_TIME
 
-	;mov AX, 4C00h 		; zakończenie programu
-	;int 21h
 main endp
 end main
