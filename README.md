@@ -2,7 +2,7 @@
 This project is a re-creation of the classic Pac-Man game fully implemented in 8086 Assembly in TEXT-MODE. The game aims to simulate the nostalgic gameplay of the original Pac-Man, while providing an opportunity to work with low-level programming and system architecture concepts. The game runs in a terminal environment using text characters to represent game elements.
 
 ## Project Contains:
-- **Sound Effects:** Basic sound effects, like when Pac-Man eats a pellet or is caught by a ghost.
+- **Sound Effects:** Basic sound effects, like when Pac-Man is caught by a ghost.
 - **Main Menu:** An interactive menu to start the game, adjust settings, and choose difficulty levels.
 - **Difficulty Levels:** Three difficulty levels that affect the number of ghosts.
 - **Score Counter:** Displays the current score, updated as the player eats pellets and avoids ghosts.
